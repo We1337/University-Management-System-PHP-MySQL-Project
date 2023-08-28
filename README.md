@@ -11,12 +11,12 @@ On the other hand, a user can simply register as student by entering details suc
 Last but not least, a clean and responsive dashboard is presented with simple color combinations for greater user experience while using this university management system project in PHP source code. For its UI elements, there is no involvement of UI Frameworks instead, the Vanilla CSS is on board. Presenting a new online university management system project in PHP MySQL source code that contains all the essential features to follow up, and a knowledgeable resource for learning purposes.
 
 Available Features:
-Admin Panel
-Student Panel
-Faculty Panel
-Student Management
-Manage Student Attendance
-List Faculty Members
-Set Student’s Result
-View Overall Result
-Download Student and Faculty Records
+- Admin Panel
+- Student Panel
+- Faculty Panel
+- Student Management
+- Manage Student Attendance
+- List Faculty Members
+- Set Student’s Result
+- View Overall Result
+- Download Student and Faculty Records
