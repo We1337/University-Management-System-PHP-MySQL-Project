@@ -233,6 +233,32 @@ INSERT INTO `st_info` (`st_id`, `name`, `password`, `email`, `bday`, `program`, 
 -- Indexes for dumped tables
 --
 
+CREATE TABLE `student_marks_table` (
+    `student_mark_id` int(11) NOT NULL,
+    `student_name` varchar(100) NOT NULL,
+    `student_actual_id` int(11) NOT NULL,
+    `student_group` varchar(100) NOT NULL,
+    `student_faculty` varchar(100) NOT NULL,
+    `student_course_name` varchar(100) NOT NULL,
+    `student_course_week_1` int(100) NOT NULL,
+    `student_course_week_2` int(100) NOT NULL,
+    `student_course_week_3` int(100) NOT NULL,
+    `student_course_week_4` int(100) NOT NULL,
+    `student_course_week_5` int(100) NOT NULL,
+    `student_course_week_6` int(100) NOT NULL,
+    `student_course_week_7` int(100) NOT NULL,
+    `student_course_week_8` int(100) NOT NULL,
+    `student_course_week_9` int(100) NOT NULL,
+    `student_course_week_10` int(100) NOT NULL,
+    `student_course_week_11` int(100) NOT NULL,
+    `student_course_week_12` int(100) NOT NULL,
+    `student_course_week_13` int(100) NOT NULL,
+    `student_course_week_14` int(100) NOT NULL,
+    `student_course_week_15` int(100) NOT NULL,
+    `student_course_week_16` int(100) NOT NULL,
+    `student_total_score` int(100) NOT NULL,
+)
+
 --
 -- Indexes for table `admin`
 --
@@ -269,6 +295,9 @@ ALTER TABLE `result`
 --
 ALTER TABLE `st_info`
   ADD PRIMARY KEY (`st_id`);
+
+ALTER TABLE `student_marks_table`
+    ADD PRIMARY KEY (`student_mark_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
