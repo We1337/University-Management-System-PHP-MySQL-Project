@@ -1,6 +1,5 @@
 <?php
 
-
 class Admin extends DatabaseConnection {
 	
 	/**
@@ -35,15 +34,44 @@ class Admin extends DatabaseConnection {
 		return null;
 	}
 
-	//search student
-	//Search Query
-	public function search($query){
-		global $conn;
-		$result = $conn->query("SELECT * FROM st_info WHERE (st_id LIKE '%".$query."%'
-							OR name LIKE '%".$query."%'
-								OR contact LIKE '%".$query."%'
-									OR email LIKE '%".$query."%') order by st_id");
-		return $result;
+
+	/**
+	 * Search for students based on a query.
+	 *
+	 * This function performs a search for students in the "st_info" table based on the provided query.
+	 * It searches for matches in the student ID, name, contact, and email fields and returns the results.
+	 *
+	 * @param string $query The search query.
+	 * @return PDOStatement|false Returns a PDOStatement object with the search results on success or false on failure.
+	 */
+	public function search($user_input)
+	{
+		// Define the SQL query for searching students
+		$query_value = "SELECT * FROM st_info WHERE (st_id LIKE :query OR name LIKE :query OR contact LIKE :query OR email LIKE :query) ORDER BY st_id";
+		
+		try
+		{
+			// Prepare the SQL query
+			$pdo = parent::connect();
+			$query = $pdo->prepare($query_value);
+			
+			// Bind the search query as a parameter (using prepared statements to prevent SQL injection)
+			$query->bindValue(':query', '%' . $user_input . '%');
+			
+			// Execute the query
+			$query->execute();
+			
+			// Return the PDOStatement object with search results
+			return $query;
+		}
+		catch(PDOException $e)
+		{
+			// Log any database errors that occur
+			error_log("Database Error: " . $e->getMessage());
+		}
+		
+		// Return null if an error occurs
+		return null;
 	}
 	
 
@@ -101,37 +129,108 @@ class Admin extends DatabaseConnection {
 	}
 
 
-
-
-	public function get_admin_session(){
-		return @$_SESSION['admin_login'];
+	/**
+	 * Get the admin session status.
+	 *
+	 * This function checks whether the admin is currently logged in by
+	 * inspecting the 'admin_login' key in the session data.
+	 *
+	 * @return bool True if the admin is logged in, false otherwise.
+	 */
+	public function isAdminLoggedIn() {
+		// Use the isset() function to check if the 'admin_login' key is set in the session.
+		return isset($_SESSION['admin_login']);
 	}
-	//admin logout 
-	public function admin_logout(){
+
+
+	/**
+	 * Log the admin out and destroy their session.
+	 *
+	 * This function logs the admin out by setting the 'admin_login' session variable to false
+	 * and unsetting other admin-related session variables like 'admin_id' and 'admin_name'.
+	 */
+	public function adminLogout() {
+		// Set the 'admin_login' session variable to false to log the admin out.
 		$_SESSION['admin_login'] = false;
+		
+		// Unset other admin-related session variables.
 		unset($_SESSION['admin_id']);
 		unset($_SESSION['admin_name']);
-		unset($_SESSION['admin_login']);
 	}
-	//delete student
-	public function delete_student($st_id){
-		global $conn;
-		$sql = "delete from st_info where st_id='$st_id' ";
-		$result = $conn->query($sql);
-		if($result){
-			return true;
-		}else{
-			return false;
+
+
+	/**
+	 * Delete a student by their Student ID.
+	 *
+	 * @param string $student_id The unique Student ID to identify the student to be deleted.
+	 * @return bool Returns true on successful deletion, or false on failure.
+	 */
+	public function delete_student($student_id)
+	{
+		// Define the SQL query to delete a student by their Student ID
+		$query_value = "DELETE FROM st_info WHERE st_id = :student_id";
+
+		try
+		{
+			// Get a PDO instance for the database connection
+			$pdo = parent::connect();
+
+			// Prepare the SQL query
+			$stmt = $pdo->prepare($query_value);
+
+			// Bind the Student ID as a parameter to prevent SQL injection
+			$stmt->bindParam(":student_id", $student_id, PDO::PARAM_STR);
+
+			// Execute the query and check the result
+			$result = $stmt->execute();
+
+			if ($result) {
+				return true; // Deletion was successful
+			}
+		} 
+		catch (PDOException $e)
+		{
+			// Log any database errors that occur
+			error_log("Database Error: " . $e->getMessage());
 		}
+
+		return false; // Deletion failed
 	}
-	//attendance system
-	
-	public function attn_student(){
-		global $conn;
-		$sql = "select * from at_student";
-		$result = $conn->query($sql);
-		return $result;
+
+
+	/**
+	 * Retrieve attendance records for students from the database.
+	 *
+	 * This function queries the database to fetch attendance records for students from the 'at_student' table.
+	 *
+	 * @return PDOStatement|false|null A PDOStatement with the result set, false on query failure, or null on exception.
+	 */
+	public function fetchStudentAttendanceRecords()
+	{
+		$query = "SELECT * FROM at_student";
+		
+		try {
+			// Get a database connection using the parent's 'connect' method.
+			$pdo = parent::connect();
+
+			// Prepare the SQL query.
+			$stmt = $pdo->prepare($query);
+
+			// Execute the query.
+			$result = $stmt->execute();
+
+			if ($result) {
+				return $stmt; // Return the PDOStatement with the result set.
+			}
+		} catch (PDOException $e) {
+			error_log("Database Error: " . $e->getMessage());
+		}
+		
+		return null;
 	}
+
+
+
 	public function add_attn_student($name,$stid){
 		global $conn;
 		$sql = "insert into at_student(name,st_id) values('$name','$stid')";
@@ -141,6 +240,8 @@ class Admin extends DatabaseConnection {
 		$result = $conn->query($sql2);
 		return $result;
 	}
+	
+
 	public function insertattn($cur_date,$atten = array()){
 		global $conn;
 		$sql = "select distinct at_date from attn";
@@ -167,17 +268,23 @@ class Admin extends DatabaseConnection {
 		}
 		
 	}
+
+
 	public function delete_atn_student($at_id){
 		global $conn;
 		$res = $conn->query("delete from at_student where id = '$at_id' ");
 		return $res;
 	}
+
+
 	public function get_attn_date(){
 		global $conn;
 		$res = $conn->query("select distinct at_date from attn ");
 		return $res;
 		
 	}
+
+
 	public function attn_all_student($date){
 		global $conn;
 		$res = $conn->query("select at_student.name, attn.*
@@ -187,6 +294,8 @@ class Admin extends DatabaseConnection {
 			where at_date = '$date' ");
 		return $res;
 	}
+
+
 	public function update_attn($date,$atten){
 		global $conn;
 		foreach($atten as $key =>$attn_value ){
@@ -204,6 +313,8 @@ class Admin extends DatabaseConnection {
 			return false;
 		}
 	}
+
+
 	//grading system
 	public function add_marks($stid,$subject,$semester,$marks){
 		global $conn;
@@ -218,6 +329,8 @@ class Admin extends DatabaseConnection {
 		return $result;
 		}
 	}
+
+
 	//show marks
 	public function show_marks($stid,$semester){
 		global $conn;
@@ -230,6 +343,8 @@ class Admin extends DatabaseConnection {
 		}
 		
 	}
+
+
 	//update student result
 	public function update_result($stid,$subject = array(),$semester){
 		global $conn;
@@ -243,6 +358,8 @@ class Admin extends DatabaseConnection {
 			return false;
 		}
 	}
+
+
 	public function view_cgpa($stid){
 		global $conn;
 		$sql = "select * from result where st_id='$stid'";
