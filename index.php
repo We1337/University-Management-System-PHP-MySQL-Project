@@ -1,24 +1,21 @@
 <?php
 	ob_start();
+	
 	session_start();
 
 	require "includes/config.php";
-	require_once "includes/functions.php";
+	require_once "admin/includes/admin.class.php";
 
-	$user = new login_registration_class();
+	$admin = new Admin();
 
-	if($user->get_admin_session())
+	if($admin->isAdminLoggedIn())
 	{
-		header("Location: admin/admin.php");
+		header("Location: admin.php");
 		exit();
 	}
-?>
 
-<?php
-
-   	$pageTitle = "Admin Login";
-	include("header.php"); 
-
+   	$pageTitle = "Admin login";
+	include("header.php");
 ?>
 
 <?php
@@ -35,7 +32,7 @@
 		else
 		{
 			$password = md5($password);
-			$login = $user->admin_userlogin($username, $password);
+			$login = $admin->authenticateAdmin($username, $password);
 
 			if($login)
 			{
@@ -50,10 +47,10 @@
 
 ?>
 
-      	<div class="p-4 sm:ml-64">
-         	<div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14">
-            	<div class="items-center justify-center h-48 mb-4 rounded bg-gray-50 dark:bg-gray-800">
-               		<section class="bg-gray-50 dark:bg-gray-900">
+      	<div class="p-4 sm:ml-64 p-2" style="padding-top: 8rem;">
+         	<div class="">
+            	<div class="">
+               		<section class="">
   						<div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
       						<a href="#" class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
           						<img class="w-8 h-8 mr-2" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg" alt="logo">
