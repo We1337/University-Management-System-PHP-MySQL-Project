@@ -20,7 +20,7 @@ class Admin extends DatabaseConnection {
 
 			if ($query) {
 				// Execute the query
-				$result = $query->execute();
+				$result = $query->execute();				
 
 				if ($result) {
 					// Return the PDOStatement object
@@ -60,9 +60,9 @@ class Admin extends DatabaseConnection {
 				$query->bindValue(':query', '%' . $searchQuery . '%');
 				
 				// Execute the query
-				$result = $query->execute();
+				$check = $query->execute();
 				
-				if ($result) {
+				if ($check) {
 					// Return the PDOStatement object with search results
 					return $query;
 				} 
@@ -75,7 +75,6 @@ class Admin extends DatabaseConnection {
 
 		return false; // Database error
 	}
-
 
 
 	/**
@@ -161,6 +160,11 @@ class Admin extends DatabaseConnection {
 		// Unset other admin-related session variables.
 		unset($_SESSION['admin_id']);
 		unset($_SESSION['admin_name']);
+		unset($_SESSION['admin_login']);
+
+		// Return home page.
+		header("Location: ../index.php");
+		exit();
 	}
 
 
@@ -340,7 +344,7 @@ class Admin extends DatabaseConnection {
 	 */
 	public function deleteAtnStudent($studentId) {
 		// Prepare the SQL query to delete a student record by ID.
-		$sqlQuery = "DELETE FROM at_student WHERE id = :student_id";
+		$sqlQuery = "DELETE FROM `at_student` WHERE `id` = :student_id";
 
 		try {
 			// Get a database connection and prepare the SQL query.
@@ -370,97 +374,335 @@ class Admin extends DatabaseConnection {
 
 
 
-	public function get_attn_date(){
-		global $conn;
-		$res = $conn->query("select distinct at_date from attn ");
-		return $res;
-		
-	}
+	/**
+	 * Retrieve a list of unique attendance dates from the 'attn' table.
+	 *
+	 * This function fetches distinct attendance dates from the 'attn' table to provide a list of unique dates.
+	 *
+	 * @return array|false An array of unique attendance dates or false if an error occurs.
+	 */
+	public function getAttendanceDates() {
+		// SQL query to select distinct attendance dates.
+		$sqlQuery = "SELECT DISTINCT `at_date` FROM `attn`";
 
+		try {
+			// Get a database connection and prepare the SQL query.
+			$query = parent::connect()->prepare($sqlQuery);
 
-	public function attn_all_student($date){
-		global $conn;
-		$res = $conn->query("select at_student.name, attn.*
-			from at_student
-			inner join attn
-			on at_student.st_id = attn.st_id
-			where at_date = '$date' ");
-		return $res;
-	}
+			// Execute the query to retrieve distinct dates.
+			$query->execute();
 
+			// Fetch all distinct dates and return them as an array.
+			$result = $query->fetchAll(PDO::FETCH_ASSOC);
 
-	public function update_attn($date,$atten){
-		global $conn;
-		foreach($atten as $key =>$attn_value ){
-			if($attn_value == "present"){
-				$sql = "update attn set atten='present' where st_id='$key' and at_date='$date' ";
-				$att_res = $conn->query($sql);
-			}elseif($attn_value == "absent"){
-				$sql = "update attn set atten='absent' where st_id='$key' and at_date='$date' ";
-				$att_res = $conn->query($sql);
+			if ($result) {
+				return $result;
 			}
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
 		}
-		if($att_res){
+
+		// Return false in case of an error or no results.
+		return false;
+	}
+
+
+
+	/**
+	 * Retrieve attendance records for all students on a specific date.
+	 *
+	 * This function retrieves attendance records for all students from the 'at_student' and 'attn' tables
+	 * for a given date by performing an inner join on the student IDs.
+	 *
+	 * @param string $date The specific date for which attendance records should be retrieved.
+	 *
+	 * @return array|false An array of attendance records for all students on the given date or false if an error occurs.
+	 */
+	public function getAttendanceForAllStudents($date) {
+		// SQL query to select attendance records for all students on the provided date.
+		$sqlQuery = "SELECT `at_student`.`name`, `attn`.* FROM `at_student` INNER JOIN `attn` ON `at_student`.`st_id` = `attn`.`st_id` WHERE `at_date` = :dates";
+
+		try {
+			// Get a database connection and prepare the SQL query.
+			$query = parent::connect()->prepare($sqlQuery);
+
+			// Bind the date parameter to the query.
+			$query->bindParam(':dates', $date, PDO::PARAM_STR);
+
+			// Execute the query to retrieve attendance records.
+			$query->execute();
+
+			// Fetch all attendance records and return them as an array of associative arrays.
+			$result = $query->fetchAll(PDO::FETCH_ASSOC);
+
+			if ($result) {
+				return $result;
+			}
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
+		}
+
+		// Return false in case of an error or no results.
+		return false;
+	}
+		
+
+
+
+	/**
+	 * Update student attendance records for a specific date.
+	 *
+	 * This function updates attendance records for students in the 'attn' table on a given date.
+	 *
+	 * @param string $date The specific date for which attendance records should be updated.
+	 * @param array $attendance An array containing student attendance data (student ID as keys and 'present' or 'absent' as values).
+	 *
+	 * @return bool Returns true on successful update, false if an error occurs.
+	 */
+	public function updateAttendanceForDate($date, $attendance) {
+		try {
+			// Iterate through the provided attendance data.
+			foreach ($attendance as $key => $attnValue) {
+				// Prepare the SQL query to update attendance records.
+				$sqlQuery = "UPDATE `attn` SET `atten` = :present_absent WHERE `st_id` = :student_id AND `at_date` = :date";
+				
+				// Get a database connection and prepare the SQL query.
+				$query = parent::connect()->prepare($sqlQuery);
+
+				// Bind parameters for the query.
+				$query->bindParam(':present_absent', ($attnValue === 'present' ? 'present' : 'absent'), PDO::PARAM_STR);
+				$query->bindParam(':student_id', $key, PDO::PARAM_INT);
+				$query->bindParam(':date', $date, PDO::PARAM_STR);
+
+				// Execute the query to update attendance records.
+				$result = $query->execute();
+
+				if (!$result) {
+					// If the update fails, return false immediately.
+					return false;
+				}
+			}
+
+			// Return true if all updates were successful.
 			return true;
-		}else{
-			return false;
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
 		}
+
+		// Return false in case of an error.
+		return false;
 	}
 
 
-	//grading system
-	public function add_marks($stid,$subject,$semester,$marks){
-		global $conn;
-		$qry = "select * from result where st_id='$stid' and sub='$subject' and semester='$semester' ";
-		$query = $conn->query($qry);
-		$count = $query->num_rows;
-		if($count>0){
-			return false;
-		}else{
-		$sql = "insert into result(st_id,marks,sub,semester) values('$stid','$marks','$subject','$semester')";
-		$result = $conn->query($sql);
-		return $result;
+
+	
+	/**
+	 * Add or update student marks for a specific subject and semester in the grading system.
+	 *
+	 * This function checks if a record for the given student, subject, and semester already exists in the 'result' table.
+	 * If a record exists, it returns false (indicating that an update is not allowed). If no record exists, it inserts
+	 * a new record with the provided marks.
+	 *
+	 * @param string $stid The student's unique identifier.
+	 * @param string $subject The subject for which marks are being added.
+	 * @param string $semester The semester in which the marks are being added.
+	 * @param int $marks The marks to be added for the subject.
+	 *
+	 * @return bool Returns true on successful insertion or false if a record already exists or an error occurs.
+	 */
+	public function addOrUpdateMarks($student_id, $subject, $semester, $marks) {
+		// SQL query to check if a record already exists for the given student, subject, and semester.
+		$querySql = "SELECT * FROM `result` WHERE `st_id` = :student_id AND `sub` = :subjects AND `semester` = :semester";
+
+		try {
+			// Get a database connection and prepare the SQL query.
+			$query = parent::connect()->prepare($querySql);
+
+			// Bind parameters for the query.
+			$query->bindParam(':student_id', $student_id, PDO::PARAM_INT);
+			$query->bindParam(':subjects', $subject, PDO::PARAM_STR);
+			$query->bindParam(':semester', $semester, PDO::PARAM_STR);
+
+			// Execute the query to check if a record exists.
+			$query->execute();
+
+			// Get the count of matching records.
+			$count = $query->rowCount();
+
+			if ($count > 0) {
+				// A record already exists; return false to indicate that an update is not allowed.
+				return false;
+			} else {
+				// Insert a new record with the provided marks.
+				$sql = "INSERT INTO `result` (st_id, marks, sub, semester) VALUES (:stid, :marks, :subjects, :semester)";
+				$insertQuery = parent::connect()->prepare($sql);
+
+				// Bind parameters for the insert query.
+				$insertQuery->bindParam(':stid', $stid, PDO::PARAM_INT);
+				$insertQuery->bindParam(':marks', $marks, PDO::PARAM_INT);
+				$insertQuery->bindParam(':subjects', $subject, PDO::PARAM_STR);
+				$insertQuery->bindParam(':semester', $semester, PDO::PARAM_STR);
+
+				// Execute the insert query.
+				$result = $insertQuery->execute();
+
+				if ($result) {
+					return $result;
+				}
+			}
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
 		}
+
+		// Return false in case of an error.
+		return false;
 	}
 
 
-	//show marks
-	public function show_marks($stid,$semester){
-		global $conn;
-		$result = $conn->query("select * from result where st_id='$stid' and semester='$semester' ");
-		$count = $result->num_rows;
-		if($count>0){
-			return $result;
-		}else{
-			return false;
+
+	/**
+	 * Retrieve student marks for a specific semester in the grading system.
+	 *
+	 * This function retrieves the marks for a specific student and semester from the 'result' table.
+	 *
+	 * @param string $stid The student's unique identifier.
+	 * @param string $semester The semester for which marks are being retrieved.
+	 *
+	 * @return PDOStatement|false Returns a PDOStatement object with the marks or false if no records are found or an error occurs.
+	 */
+	public function getStudentMarks($stid, $semester) {
+		// SQL query to select marks for the given student and semester.
+		$querySql = "SELECT * FROM `result` WHERE `st_id` = :student_id AND `semester` = :semester";
+
+		try {
+			// Get a database connection and prepare the SQL query.
+			$query = parent::connect()->prepare($querySql);
+
+			// Bind parameters for the query.
+			$query->bindParam(':student_id', $stid, PDO::PARAM_STR);
+			$query->bindParam(':semester', $semester, PDO::PARAM_STR);
+
+			// Execute the query to retrieve the marks.
+			$query->execute();
+
+			// Get the count of matching records.
+			$result = $query->rowCount();
+
+			if ($result > 0) {
+				// Records are found; return the PDOStatement object with marks.
+				return $query;
+			}
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
+		}
+
+		// Return false in case of an error or no records found.
+		return false;
+	}
+
+
+
+	/**
+	 * Update student results for multiple subjects in a specific semester in the grading system.
+	 *
+	 * This function allows you to update student results for various subjects in a given semester.
+	 *
+	 * @param string $stid The student's unique identifier.
+	 * @param array $subject An associative array containing subjects as keys and marks as values.
+	 * @param string $semester The semester for which results are being updated.
+	 *
+	 * @return bool Returns true on successful update, false if an error occurs.
+	 */
+	public function updateStudentResults($stid, $subject, $semester) {
+
+		try {
+			// Iterate through the provided subjects and marks.
+			foreach ($subject as $key => $mark) {
+				// SQL query to update a specific subject's result for the student in the given semester.
+				$sql = "UPDATE `result` SET `marks` = :mark WHERE `st_id` = :student_id AND `semester` = :semester AND `sub` = :subjects";
+
+				// Get a database connection and prepare the SQL query.
+				$query = parent::connect()->prepare($sql);
+
+				// Bind parameters for the update query.
+				$query->bindParam(':mark', $mark, PDO::PARAM_INT);
+				$query->bindParam(':student_id', $stid, PDO::PARAM_STR);
+				$query->bindParam(':semester', $semester, PDO::PARAM_STR);
+				$query->bindParam(':subjects', $key, PDO::PARAM_STR);
+
+				// Execute the query to update the result for the subject.
+				$result = $query->execute();
+
+				if (!$result) {
+					// If the update fails, return false immediately.
+					return false;
+				}
+			}
+
+			// Return true if all updates were successful.
+			return true;
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
+		}
+
+		// Return false in case of an error.
+		return false;
+	}
+
+
+
+	/**
+	 * View CGPA (Cumulative Grade Point Average) for a specific student.
+	 *
+	 * This function retrieves the results for a specific student from the 'result' table, which can be used to calculate the CGPA.
+	 *
+	 * @param string $stid The student's unique identifier.
+	 *
+	 * @return PDOStatement|false Returns a PDOStatement object with the student's results or false if no records are found or an error occurs.
+	 */
+	public function viewCGPA($stid) {
+		// SQL query to select results for the given student.
+		$querySql = "SELECT * FROM `result` WHERE `st_id` = :student_id";
+		
+		try {
+			// Get a database connection and prepare the SQL query.
+			$query = parent::connect()->prepare($querySql);
+
+			// Bind the student ID parameter to the query.
+			$query->bindParam(':student_id', $stid, PDO::PARAM_INT);
+			
+			// Execute the query to retrieve the student's results.
+			$query->execute();
+			
+			// Check if the query was executed successfully.
+			$result = $query->rowCount();
+			
+			if ($result) {
+				// Records are found; return the PDOStatement object with the student's results.
+				return $query;
+			}
+		} catch (PDOException $e) {
+			// Log any database errors to the error log.
+			error_log("Database Error: " . $e->getMessage());
+			// You may also consider re-throwing the exception here for further error handling.
 		}
 		
+		// Return false in case of an error or no records found.
+		return false;
 	}
 
-
-	//update student result
-	public function update_result($stid,$subject = array(),$semester){
-		global $conn;
-		foreach($subject as $key =>$mark ){
-			$sql = "update result set marks='$mark' where st_id='$stid' and semester='$semester' and sub='$key' ";
-				$result = $conn->query($sql);	
-		}
-		if($result){
-			return true;
-		}else{
-			return false;
-		}
-	}
-
-
-	public function view_cgpa($stid){
-		global $conn;
-		$sql = "select * from result where st_id='$stid'";
-		$result = $conn->query($sql);
-		return $result;
-	}
-	
-	
 	
 	/* Total average marks
 	public function sgpa(){
@@ -471,13 +713,7 @@ class Admin extends DatabaseConnection {
 	}
 	*/
 	
-	
-	
-	
-	
 //end class 	
 };
-
-
 
 ?>
