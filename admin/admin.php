@@ -2,25 +2,19 @@
 	session_start();
 	
 	require "../includes/config.php";
+	require_once "includes/admin.class.php";
 	
-	require_once "../includes/functions.php";
+	$admin = new Admin();
 	
-	$user = new login_registration_class();
-	
-	$admin_id = $_SESSION['admin_id'];
-	
-	$admin_name = $_SESSION['admin_name'];
-	
-	if(!$user->get_admin_session())
+	if(!$admin->isAdminLoggedIn())
 	{
-		header('Location: index.php');
+		header('Location: ../index.php');
 		exit();
 	}
-?>
 
-<?php 
 	$pageTitle = "Admin";
-	include "../includes/headertop_admin.php";
+	include "headertop_admin.php";
+
 ?>
 
 <div class="relative my-1 p-10" style="padding-top: 100px; padding-right: 50px; padding-bottom: 50px; padding-left: 50px;">
@@ -42,12 +36,12 @@
 						<a href="admin_all_student.php">View all students</a>
 					</th>
 					<th class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-						Faculty details
+						<a>Faculty details</a>
 					</th>
 				</tr>
 				<tr class="border-b bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
 					<th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-						Student result
+						<a href="../st_result.php">Student result</a>
 					</th>
 					<th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
 						Information
@@ -55,7 +49,7 @@
 				</tr>
 				<tr class="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
 					<th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-						Attendance
+						<a href="../class_att.php">Attendance</a>
 					</th>
 					<th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
 						Search faculty
