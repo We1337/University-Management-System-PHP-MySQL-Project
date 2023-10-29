@@ -29,8 +29,8 @@ class DatabaseConnection {
             // If there's an error, handle it gracefully and provide an error message
             // You can log the error instead of using die() in a production environment
             die("Connection failed: " . $e->getMessage());
-            return null;
         }
+        return null;
     }
 }
 
