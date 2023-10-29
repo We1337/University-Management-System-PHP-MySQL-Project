@@ -249,8 +249,11 @@ class Admin extends DatabaseConnection {
 	 * @return bool Returns true on successful insertion, false on failure.
 	 */
 	public function insertStudentAttendance($student_name, $student_id) {
-		$sqlQuery_at_student = "INSERT INTO `at_student` (student_name, student_id) VALUES (:student_name, :student_id)";
-		$sqlQuery_at_attendance = "INSERT INTO `attn` (st_id) VALUES (:student_id)";
+
+		$sqlQuery_at_student = "INSERT INTO `at_student` (`name`, `st_id`) VALUES (:student_name, :student_id)";
+		$sqlQuery_at_attendance = "INSERT INTO `attn` (`st_id`, `atten`, `at_date`) VALUES (:student_id, :atten, :at_date)";
+		$default_value_attendance = 'absent';
+		$at_date = date("Y-m-d");
 
 		try {
 			$query_at_student = parent::connect()->prepare($sqlQuery_at_student);
@@ -262,6 +265,8 @@ class Admin extends DatabaseConnection {
 				$query_at_student->bindParam(':student_id', $student_id, PDO::PARAM_INT);
 
 				$query_at_attendance->bindParam(':student_id', $student_id, PDO::PARAM_INT);
+				$query_at_attendance->bindParam(':atten', $default_value_attendance, PDO::PARAM_STR);
+				$query_at_attendance->bindParam(':at_date', $at_date, PDO::PARAM_STR);
 
 				// Execute both queries.
 				$result_student = $query_at_student->execute();
@@ -342,7 +347,7 @@ class Admin extends DatabaseConnection {
 	 * @param int $studentId The unique identifier of the student to be deleted.
 	 * @return bool Returns true if the student record is successfully deleted, false if an error occurs.
 	 */
-	public function deleteAtnStudent($studentId) {
+	public function deleteAttendentStudent($studentId) {
 		// Prepare the SQL query to delete a student record by ID.
 		$sqlQuery = "DELETE FROM `at_student` WHERE `id` = :student_id";
 
@@ -389,14 +394,11 @@ class Admin extends DatabaseConnection {
 			// Get a database connection and prepare the SQL query.
 			$query = parent::connect()->prepare($sqlQuery);
 
-			// Execute the query to retrieve distinct dates.
-			$query->execute();
-
-			// Fetch all distinct dates and return them as an array.
-			$result = $query->fetchAll(PDO::FETCH_ASSOC);
+			// Execute the query to retrieve distinct dates.			
+			$result = $query->execute();
 
 			if ($result) {
-				return $result;
+				return $query;
 			}
 		} catch (PDOException $e) {
 			// Log any database errors to the error log.
@@ -432,13 +434,10 @@ class Admin extends DatabaseConnection {
 			$query->bindParam(':dates', $date, PDO::PARAM_STR);
 
 			// Execute the query to retrieve attendance records.
-			$query->execute();
-
-			// Fetch all attendance records and return them as an array of associative arrays.
-			$result = $query->fetchAll(PDO::FETCH_ASSOC);
+			$result = $query->execute();			
 
 			if ($result) {
-				return $result;
+				return $query;
 			}
 		} catch (PDOException $e) {
 			// Log any database errors to the error log.
@@ -517,8 +516,8 @@ class Admin extends DatabaseConnection {
 	 * @return bool Returns true on successful insertion or false if a record already exists or an error occurs.
 	 */
 	public function addOrUpdateMarks($student_id, $subject, $semester, $marks) {
-		// SQL query to check if a record already exists for the given student, subject, and semester.
-		$querySql = "SELECT * FROM `result` WHERE `st_id` = :student_id AND `sub` = :subjects AND `semester` = :semester";
+    	// SQL query to check if a record already exists for the given student, subject, and semester.
+    	$querySql = "SELECT * FROM `result` WHERE `st_id` = :student_id AND `sub` = :subjects AND `semester` = :semester";
 
 		try {
 			// Get a database connection and prepare the SQL query.
@@ -540,11 +539,11 @@ class Admin extends DatabaseConnection {
 				return false;
 			} else {
 				// Insert a new record with the provided marks.
-				$sql = "INSERT INTO `result` (st_id, marks, sub, semester) VALUES (:stid, :marks, :subjects, :semester)";
+				$sql = "INSERT INTO `result` (st_id, marks, sub, semester) VALUES (:student_id, :marks, :subjects, :semester)";
 				$insertQuery = parent::connect()->prepare($sql);
 
 				// Bind parameters for the insert query.
-				$insertQuery->bindParam(':stid', $stid, PDO::PARAM_INT);
+				$insertQuery->bindParam(':student_id', $student_id, PDO::PARAM_INT);
 				$insertQuery->bindParam(':marks', $marks, PDO::PARAM_INT);
 				$insertQuery->bindParam(':subjects', $subject, PDO::PARAM_STR);
 				$insertQuery->bindParam(':semester', $semester, PDO::PARAM_STR);
