@@ -1,0 +1,15 @@
+{
+    "name": "we1337/university-management-system",
+    "autoload": {
+        "psr-4": {
+            "We1337\\UniversityManagementSystem\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "We1337",
+            "email": "weuser149@gmail.com"
+        }
+    ],
+    "require": {}
+}

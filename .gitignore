@@ -1,6 +1,2 @@
-run_server.sh
-*.png
-LICENSE
-README.md
-.vscode
-.gitignore
+
+/vendor/
