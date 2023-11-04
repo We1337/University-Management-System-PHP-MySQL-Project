@@ -1,2 +1,16 @@
+"""
+Enable the mod_rewrite module and define a rewrite rule.
+
+Example Usage:
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/index.html [L]
+
+Inputs:
+    None
+
+Outputs:
+    None
+"""
+
 RewriteEngine On
 RewriteRule ^(.*)$ public/index.html [L]
