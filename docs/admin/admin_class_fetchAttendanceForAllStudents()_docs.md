@@ -1,12 +1,10 @@
 ## Summary
-This code snippet is a method called `fetchAttendanceForAllStudents` in the `Admin` class. It retrieves attendance records for all students from the `at_student` and `attn` tables for a given date.
+The code snippet is a method called `fetchAttendanceForAllStudents` that retrieves attendance records for all students from the database for a specific date.
 
 ## Example Usage
 ```php
-$admin = new Admin();
-$date = "2021-10-01";
-$attendance = $admin->fetchAttendanceForAllStudents($date);
-print_r($attendance);
+$databaseConnection = new DatabaseConnection($config);
+$attendanceRecords = $databaseConnection->fetchAttendanceForAllStudents('2021-01-01');
 ```
 
 ## Code Analysis
@@ -14,13 +12,15 @@ print_r($attendance);
 - `$date` (string): The date for which attendance records are requested.
 ___
 ### Flow
-1. The method establishes a database connection by calling the `connect` method from the parent class.
-2. It prepares an SQL query to select attendance records for all students on the specified date.
-3. The query joins the `at_student` and `attn` tables on the student ID and selects records where the attendance date matches the input date.
-4. The method binds the input date to the `:dates` parameter in the query.
-5. It executes the query using the prepared statement.
-6. If the execution is successful, it fetches and returns the results as an array of associative arrays.
+1. The method establishes a database connection by calling the `getConnection` method from the parent class.
+2. It prepares an SQL query to select attendance records for all students on a specific date.
+3. The query uses an inner join to combine the `at_student` and `attn` tables based on the `st_id` column.
+4. The `at_date` column is filtered by the provided date using a parameterized query.
+5. The prepared statement is executed and if successful, the attendance records are fetched as an array of associative arrays.
+6. The method returns the fetched attendance records.
+7. If any exception occurs during the process, the method catches the `PDOException`, logs the error message, and returns false.
 ___
 ### Outputs
-- An array of attendance records for all students on the specified date, or false if there is a database error or no records are found.
+- An array of attendance records for all students if the query is executed successfully.
+- False if any exception occurs during the process.
 ___
