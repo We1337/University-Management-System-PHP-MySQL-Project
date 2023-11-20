@@ -1,4 +1,6 @@
 <?php
+$title_name="Welcome";
+
 include('includes/header.php');
 ?>
 
