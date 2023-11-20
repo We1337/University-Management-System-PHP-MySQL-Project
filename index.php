@@ -1,5 +1,5 @@
 <?php
-    // Redirect user to login.php page
-    header('Location: public/wellcome.php');
-    exit();
+
+header("Location: public/welcome.php");
+
 ?>
